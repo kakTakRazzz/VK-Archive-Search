@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VK Archive Search</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="brand">VK Archive Search</div>
+        <div class="subtitle">Локальный поиск по HTML-архиву VK</div>
+      </div>
+      <button id="chooseFolderBtn" class="button button-primary" type="button">📁 Выбрать папку</button>
+      <input id="folderInput" type="file" webkitdirectory directory multiple hidden>
+    </header>
+
+    <main class="main">
+      <section id="welcomePanel" class="panel welcome">
+        <div class="welcome-icon">⌕</div>
+        <h1>Поиск по истории сообщений</h1>
+        <p>
+          Выберите папку <b>messages</b> из архива VK или сам корень архива.
+          Все данные обрабатываются только в этом браузере.
+        </p>
+        <button id="welcomeChooseBtn" class="button button-primary" type="button">Выбрать папку</button>
+        <div class="tip">
+          Поддерживаются обычные страницы экспорта VK вида
+          <code>messages0.html</code>, <code>messages50.html</code>,
+          <code>messages100.html</code> и т. д.
+        </div>
+      </section>
+
+      <section id="workspace" class="hidden">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Диалоги</div>
+            <div id="statDialogs" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Сообщения</div>
+            <div id="statMessages" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">HTML-файлы</div>
+            <div id="statFiles" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Индексация</div>
+            <div id="statIndex" class="stat-value">Готово</div>
+          </div>
+        </div>
+
+        <section class="panel search-panel">
+          <div class="search-row">
+            <div class="search-input-wrap">
+              <span class="search-icon">⌕</span>
+              <input id="searchInput" class="search-input" type="search"
+                     placeholder="Введите слово или фразу..." autocomplete="off" spellcheck="false">
+              <button id="clearSearchBtn" class="clear-btn hidden" title="Очистить" type="button">×</button>
+            </div>
+            <button id="searchBtn" class="button button-primary" type="button">Искать</button>
+          </div>
+
+          <div class="filters">
+            <label class="field">
+              <span>Диалог</span>
+              <select id="dialogFilter">
+                <option value="">Все диалоги</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Отправитель</span>
+              <select id="senderFilter">
+                <option value="">Все отправители</option>
+              </select>
+            </label>
+
+            <label class="field checkbox-field">
+              <input id="caseSensitive" type="checkbox">
+              <span>Учитывать регистр</span>
+            </label>
+
+            <label class="field checkbox-field">
+              <input id="wholeWord" type="checkbox">
+              <span>Целое слово</span>
+            </label>
+          </div>
+
+          <div class="date-filters">
+            <label class="field">
+              <span>Дата от</span>
+              <input id="dateFrom" type="date">
+            </label>
+            <label class="field">
+              <span>Дата до</span>
+              <input id="dateTo" type="date">
+            </label>
+            <label class="field context-field">
+              <span>Контекст</span>
+              <select id="contextCount">
+                <option value="1">1 сообщение до/после</option>
+                <option value="2" selected>2 сообщения до/после</option>
+                <option value="3">3 сообщения до/после</option>
+                <option value="5">5 сообщений до/после</option>
+                <option value="10">10 сообщений до/после</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="search-hint">
+            <span id="searchStatus">Готово к поиску</span>
+            <span id="resultCount"></span>
+          </div>
+        </section>
+
+        <section id="resultsPanel" class="panel results-panel">
+          <div id="resultsEmpty" class="results-empty">
+            <div class="empty-icon">⌕</div>
+            <h2>Введите запрос</h2>
+            <p>Результаты появятся здесь. Нажмите на найденное сообщение, чтобы открыть контекст переписки.</p>
+          </div>
+          <div id="resultsList" class="results-list hidden"></div>
+        </section>
+
+        <div id="loadingPanel" class="panel loading-panel hidden">
+          <div class="loading-top">
+            <div>
+              <div class="loading-title">Индексация архива…</div>
+              <div id="loadingText" class="loading-text">Подготовка</div>
+            </div>
+            <button id="cancelBtn" class="button button-secondary" type="button">Отмена</button>
+          </div>
+          <div class="progress-track">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Работает локально • ничего не отправляется в интернет</span>
+      <span id="archivePathLabel"></span>
+    </footer>
+  </div>
+
+  <div id="modal" class="modal hidden" aria-hidden="true">
+    <div id="modalBackdrop" class="modal-backdrop"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div>
+          <div id="modalEyebrow" class="modal-eyebrow">Контекст переписки</div>
+          <h2 id="modalTitle">Диалог</h2>
+          <div id="modalMeta" class="modal-meta"></div>
+        </div>
+        <button id="closeModalBtn" class="icon-button" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
